@@ -46,3 +46,8 @@ print(dict(d2))
 # print(d2._keyvals)
 d2.rollback(state)
 print(dict(d2))
+
+
+print("Show revisions")
+for r in d.revisions():
+    print(dict(r))

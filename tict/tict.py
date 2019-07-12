@@ -121,6 +121,10 @@ class Tict(MutableMapping):
 
     def save(self):
         """Save the current state of the dictionary
+
+        Returns
+        -------
+        state : SavedState
         """
         hashstate = self._keyvals[-1].hashed
         assert hashstate == self._seed
@@ -132,9 +136,16 @@ class Tict(MutableMapping):
 
     def rollback(self, state):
         """Rollback to a previously saved state
+
+        Parameters
+        ----------
+        state : SavedState
         """
         self._sentry_valid_state(state)
-        self._keyvals = self._keyvals[:state.pos]
+        self._rollback_to_position(state.pos)
+
+    def _rollback_to_position(self, end):
+        self._keyvals = self._keyvals[:end]
         self._invalidate()
 
     def revert(self, state):
@@ -179,3 +190,33 @@ class Tict(MutableMapping):
 
     def copy(self):
         return copy.copy(self)
+
+    def revisions(self, since=None, until=None):
+        """Returns an generator yielding that state of the dictionary
+        at different revision point in the range *since* to *until*
+        inclusively.
+
+        Parameters
+        ----------
+        since : SavedState
+            Defaults to None to indicate starting from the beginning.
+        until : SavedState
+            Defaults to None to indicate stoping at the end.
+
+        """
+        if since is not None:
+            self._sentry_valid_state(since)
+            start = since.pos
+        else:
+            start = 0
+
+        if until is not None:
+            self._sentry_valid_state(until)
+            stop = until.pos
+        else:
+            stop = len(self._keyvals)
+
+        for end in range(start, stop):
+            dct = self.copy()
+            dct._rollback_to_position(end)
+            yield dct
